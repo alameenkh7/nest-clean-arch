@@ -1,0 +1,25 @@
+{
+  "editor.formatOnSave": true,
+  "eslint.format.enable": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "cSpell.words": [
+    "coreadapter",
+    "entitygateway",
+    "Firestore",
+    "mixedstorage",
+    "nestjs",
+    "Npps",
+    "papaparse",
+    "Persistor",
+    "pickable",
+    "schedulable",
+    "serdes",
+    "strat",
+    "unarchived",
+    "unparse",
+    "usecases"
+  ],
+  "typescript.preferences.importModuleSpecifier": "relative"
+}

@@ -51,8 +51,6 @@ export class Tag {
   @Field()
   background: string
 
-  @Field()
-  referencesCount: number
 
   @Field(() => Date)
   createdAt: Date

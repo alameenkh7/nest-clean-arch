@@ -24,6 +24,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true })
   const config: Configuration = app.get(ConfigS)
 
+
   app.use(cookieParser())
   app.useLogger(makeLogger(config))
   app.use(compression())

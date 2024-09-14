@@ -7,4 +7,5 @@ registerEnumType(SortingDirection, { name: 'SortingDirection' })
 export class HasId {
   @Field()
   id: string
+  name:string
 }

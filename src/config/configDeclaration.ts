@@ -85,4 +85,5 @@ export const indirectDeclarations = {
     conf.get<string>('ENVIRONMENT') === 'staging',
   isDevelopment: (conf: ConfigService) =>
     conf.get<string>('ENVIRONMENT') === 'development',
+  
 }

@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common'
-import { GraphQLModule } from '@nestjs/graphql'
+import { Module, Query } from '@nestjs/common'
+import { GraphQLModule, Mutation } from '@nestjs/graphql'
 import { CoreAdapterModule } from '../../coreadapter/coreadapter.module'
 import { InMemoryStorageModule } from '../../infrastructure/InMemoryStorage/inmemorystorage.module'
+import { UserResolver } from './user'
 import { TagResolver } from './tag'
 
 @Module({
@@ -17,6 +18,8 @@ import { TagResolver } from './tag'
       },
     }),
   ],
-  providers: [TagResolver],
+  
+  providers: [UserResolver],
+
 })
 export class AppGraphQLModule {}

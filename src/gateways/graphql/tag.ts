@@ -40,16 +40,7 @@ export class Tag {
   id: string
 
   @Field()
-  name: string
-
-  @Field()
-  description: string
-
-  @Field()
-  foreground: string
-
-  @Field()
-  background: string
+  user: string
 
 
   @Field(() => Date)
@@ -90,18 +81,4 @@ export class TagResolver {
     return true
   }
 
-  @Query(() => [Tag])
-  async allTags() {
-    return this.mem.tagLoader.loadAll()
-  }
-
-  @Query(() => Tag, { nullable: true })
-  async tagById(@Args('id') id: string) {
-    return this.mem.tagLoader.loadById(id)
-  }
-
-  @Query(() => Tag, { nullable: true })
-  async tagByNameHint(@Args('nameHint') nameHint: string) {
-    return this.mem.tagLoader.loadByName(nameHint)
-  }
-}
+};

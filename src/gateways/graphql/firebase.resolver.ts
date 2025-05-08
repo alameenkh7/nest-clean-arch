@@ -1,5 +1,5 @@
 import { Resolver, Query, Mutation, Args, InputType, Field, Int } from '@nestjs/graphql';
-import { FirebaseService } from '../../services/firebase.service';
+import { FirebaseService } from '../../modules/firebase/core/firebase.service';
 import { YourEntity, YourEntityPaginatedResult } from './types';
 import { PaginationInput } from './pagination.resolver';
 
@@ -23,46 +23,30 @@ export class CreateEntityInput {
 
 @Resolver(() => YourEntity)
 export class FirebaseResolver {
-  constructor(private firebaseService: FirebaseService) {}
+  constructor(private firebaseService: FirebaseService<YourEntity>) {}
 
   @Query(() => YourEntityPaginatedResult, { 
     name: 'getPaginatedItems',
     description: 'Get paginated items from a specific Firebase collection' 
   })
   async getPaginatedItems(
-    @Args('collection', { 
-      type: () => String, 
-      defaultValue: 'items',
-      description: 'Name of the Firebase collection to query' 
-    }) collection: string,
-    @Args('pagination', { 
-      type: () => PaginationInput, 
-      nullable: true,
-      description: 'Pagination options' 
-    }) 
-    pagination?: PaginationInput
+    @Args('page', { type: () => Int, nullable: true }) page?: number,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number
   ): Promise<YourEntityPaginatedResult> {
     // Use default pagination if not provided
-    const limit = pagination?.limit || 10;
-    const page = pagination?.page || 0;
-    const offset = page * limit;
+    const defaultLimit = 10;
+    const defaultPage = 1;
+    const safeLimit = limit || defaultLimit;
+    const safePage = page || defaultPage;
 
     // Fetch items
-    const items = await this.firebaseService.findAll(collection, { 
-      limit, 
-      offset 
-    });
-
-    // Fetch total count
-    const collectionRef = this.firebaseService.getCollectionRef(collection);
-    const snapshot = await collectionRef.count().get();
-    const total = snapshot.data().count;
+    const { items, total } = await this.firebaseService.findWithPagination({ page: safePage, limit: safeLimit });
 
     return {
       items,
       total,
-      page,
-      limit
+      page: safePage,
+      limit: safeLimit
     };
   }
 
@@ -72,18 +56,13 @@ export class FirebaseResolver {
     description: 'Get a specific item by ID from a Firebase collection' 
   })
   async getItemById(
-    @Args('collection', { 
-      type: () => String, 
-      defaultValue: 'items',
-      description: 'Name of the Firebase collection to query' 
-    }) collection: string,
     @Args('id', { 
       type: () => String,
       description: 'Unique identifier of the item' 
     }) 
     id: string
   ): Promise<YourEntity | null> {
-    return this.firebaseService.findById(collection, id);
+    return this.firebaseService.findById(id);
   }
 
   @Mutation(() => YourEntity, {
@@ -91,11 +70,6 @@ export class FirebaseResolver {
     description: 'Create a new item in a specific Firebase collection'
   })
   async createItem(
-    @Args('collection', { 
-      type: () => String, 
-      defaultValue: 'items',
-      description: 'Name of the Firebase collection to add item to' 
-    }) collection: string,
     @Args('data', { 
       type: () => CreateEntityInput,
       description: 'Data for the new item' 
@@ -110,12 +84,6 @@ export class FirebaseResolver {
     };
 
     // Create the item and get its ID
-    const id = await this.firebaseService.create(collection, itemToCreate);
-
-    // Return the created item with its ID
-    return {
-      id,
-      ...itemToCreate
-    };
+    return this.firebaseService.create(itemToCreate);
   }
 }

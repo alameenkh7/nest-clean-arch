@@ -1,22 +1,21 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { YourEntity, YourEntityPaginatedResult } from './types';
-import { FirebaseService } from '../firebase/firebase.service';
+import { FirebaseService } from '../../modules/firebase/core/firebase.service';
 
 @Resolver(() => YourEntity)
 export class YourEntityResolver {
-  constructor(private readonly firebaseService: FirebaseService) {}
+  constructor(private readonly firebaseService: FirebaseService<YourEntity>) {}
 
   @Query(() => YourEntityPaginatedResult)
   async getPaginatedItems(
     @Args('page', { type: () => Number, defaultValue: 1 }) page: number,
     @Args('limit', { type: () => Number, defaultValue: 10 }) limit: number
   ): Promise<YourEntityPaginatedResult> {
-    const skip = (page - 1) * limit;
-    const [items, total] = await this.firebaseService.findAll({ take: limit, skip });
+    const result = await this.firebaseService.findWithPagination({ page, limit });
 
     return {
-      items,
-      total,
+      items: result.items,
+      total: result.total,
       page,
       limit
     };
@@ -35,8 +34,7 @@ export class YourEntityResolver {
     @Args('description', { type: () => String, nullable: true }) description?: string,
     @Args('status', { type: () => Number, nullable: true }) status?: number
   ): Promise<YourEntity> {
-    const newItem: YourEntity = {
-      id: '', // Firebase will generate the ID
+    const newItem: Omit<YourEntity, 'id'> = {
       name,
       description,
       status,
@@ -44,8 +42,7 @@ export class YourEntityResolver {
       updatedAt: new Date().toISOString()
     };
 
-    const id = await this.firebaseService.create(newItem);
-    return { ...newItem, id };
+    return await this.firebaseService.create(newItem);
   }
 
   @Mutation(() => YourEntity, { nullable: true })
@@ -67,6 +64,11 @@ export class YourEntityResolver {
   async deleteItem(
     @Args('id', { type: () => String }) id: string
   ): Promise<boolean> {
-    return this.firebaseService.delete(id);
+    try {
+      await this.firebaseService.delete(id);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

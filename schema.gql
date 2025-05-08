@@ -59,24 +59,15 @@ type PaginatedResult {
 type Query {
   allTags(pagination: PaginationInput): PaginatedTags!
   tagById(id: String!): Tag
-  tagByNameHint(nameHint: String!): Tag
+  tagByNameHint(nameHint: String!): [Tag!]!
 
   """Get paginated items from a specific Firebase collection"""
-  getPaginatedItems(
-    """Pagination options"""
-    pagination: PaginationInput
-
-    """Name of the Firebase collection to query"""
-    collection: String = "items"
-  ): YourEntityPaginatedResult!
+  getPaginatedItems(limit: Int, page: Int): YourEntityPaginatedResult!
 
   """Get a specific item by ID from a Firebase collection"""
   getItemById(
     """Unique identifier of the item"""
     id: String!
-
-    """Name of the Firebase collection to query"""
-    collection: String = "items"
   ): YourEntity
 }
 
@@ -95,9 +86,6 @@ type Mutation {
   createItem(
     """Data for the new item"""
     data: CreateEntityInput!
-
-    """Name of the Firebase collection to add item to"""
-    collection: String = "items"
   ): YourEntity!
   updateItem(status: Int, description: String, name: String, id: String!): YourEntity
   deleteItem(id: String!): Boolean!
@@ -106,15 +94,15 @@ type Mutation {
 input CreateTagInput {
   name: String!
   description: String!
-  foreground: String!
-  background: String!
+  foreground: String
+  background: String
 }
 
 input UpdateTagInput {
   name: String!
   description: String!
-  foreground: String!
-  background: String!
+  foreground: String
+  background: String
   id: String!
 }
 

@@ -9,9 +9,9 @@ import {
   Resolver,
 } from '@nestjs/graphql'
 
-import { Inject } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { CoreS } from '../../tokens'
-import { FirebaseService } from '../../services/firebase.service'
+import { FirebaseService } from '../../modules/firebase/core/firebase.service'
 import { UseCases } from '../../core/usecases'
 import { PaginationInput } from './pagination.resolver'
 
@@ -23,11 +23,11 @@ export class CreateTagInput {
   @Field()
   description: string
 
-  @Field()
-  foreground: string
+  @Field({ nullable: true })
+  foreground?: string
 
-  @Field()
-  background: string
+  @Field({ nullable: true })
+  background?: string
 }
 
 @InputType()
@@ -47,11 +47,11 @@ export class Tag {
   @Field()
   description: string
 
-  @Field()
-  foreground: string
+  @Field({ defaultValue: '#000000' })
+  foreground: string = '#000000'
 
-  @Field()
-  background: string
+  @Field({ defaultValue: '#FFFFFF' })
+  background: string = '#FFFFFF'
 
 
   @Field()
@@ -91,74 +91,107 @@ export class PaginatedTags {
   hasPreviousPage: boolean
 }
 
+@Injectable()
 @Resolver(() => Tag)
 export class TagResolver {
+  private readonly logger = new Logger(TagResolver.name);
   constructor(
     @Inject(CoreS) private readonly core: UseCases,
-    private readonly firebaseService: FirebaseService
-  ) {}
+    private readonly firebaseService: FirebaseService<Tag>
+  ) {
+    if (!firebaseService) {
+      this.logger.error('FirebaseService not initialized');
+      throw new Error('FirebaseService not initialized');
+    }
+  }
 
   @Mutation(() => TagOutput)
   async addTag(@Args('data') tag: CreateTagInput): Promise<TagOutput> {
-    const { id } = await this.core.commands.addTag(tag)
-    return { id }
+    const newTag: Omit<Tag, 'id'> = {
+      name: tag.name,
+      description: tag.description,
+      foreground: tag.foreground || '#000000',
+      background: tag.background || '#FFFFFF',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      const createdTag = await this.firebaseService.create(newTag);
+      return { id: createdTag.id };
+    } catch (error) {
+      this.logger.error('Error adding tag', error);
+      throw error;
+    }
   }
 
   @Mutation(() => TagOutput)
   async updateTag(@Args('data') tag: UpdateTagInput): Promise<TagOutput> {
-    const { id } = await this.core.commands.updateTag(tag)
-    return { id }
+    try {
+      const updatedTag = await this.firebaseService.update(tag.id, tag);
+      return { id: updatedTag.id };
+    } catch (error) {
+      this.logger.error('Error updating tag', error);
+      throw error;
+    }
   }
 
   @Mutation(() => Boolean)
-  async deleteTag(@Args('id') tagId: string) {
-    await this.core.commands.deleteTag({ tagId })
-    return true
+  async deleteTag(@Args('id') tagId: string): Promise<boolean> {
+    try {
+      await this.firebaseService.delete(tagId);
+      return true;
+    } catch (error) {
+      this.logger.error('Error deleting tag', error);
+      return false;
+    }
   }
-
-  
 
   @Query(() => PaginatedTags)
   async allTags(
     @Args('pagination', { nullable: true }) pagination?: PaginationInput
   ): Promise<PaginatedTags> {
-    const defaultLimit = 10;
-    const defaultPage = 0;
+    const { page = 1, limit = 10 } = pagination || {};
 
-    const limit = pagination?.limit ?? defaultLimit;
-    const page = pagination?.page ?? defaultPage;
-    const offset = page * limit;
+    try {
+      const result = await this.firebaseService.findWithPagination({ page, limit });
 
-    // Load all tags
-    const allTags = await this.core.tagLoader.loadAll();
-    
-    // Paginate tags
-    const paginatedTags = allTags.slice(offset, offset + limit);
-    const totalCount = allTags.length;
-
-    // Calculate pagination info
-    const totalPages = Math.ceil(totalCount / limit);
-
-    return {
-      items: paginatedTags,
-      totalElements: totalCount,
-      totalPages,
-      currentPage: page,
-      pageSize: limit,
-      hasNextPage: page < totalPages - 1,
-      hasPreviousPage: page > 0
-    };
+      return {
+        items: result.items,
+        totalElements: result.total,
+        totalPages: Math.ceil(result.total / limit),
+        currentPage: page,
+        pageSize: limit,
+        hasNextPage: page < Math.ceil(result.total / limit),
+        hasPreviousPage: page > 1
+      };
+    } catch (error) {
+      this.logger.error('Error fetching tags', error);
+      throw error;
+    }
   }
 
   @Query(() => Tag, { nullable: true })
   async tagById(@Args('id') id: string): Promise<Tag | null> {
-    const allTags = await this.core.tagLoader.loadAll();
-    console.log('Available tag IDs:', allTags.map(tag => tag.id));
-    return this.core.tagLoader.loadById(id);
+    try {
+      return await this.firebaseService.findById(id);
+    } catch (error) {
+      this.logger.error('Error fetching tag by ID', error);
+      return null;
+    }
   }
 
-  @Query(() => Tag, { nullable: true })
-  async tagByNameHint(@Args('nameHint') nameHint: string) {
-    return this.core.tagLoader.loadByName(nameHint)
+  @Query(() => [Tag])
+  async tagByNameHint(@Args('nameHint') nameHint: string): Promise<Tag[]> {
+    try {
+      const result = await this.firebaseService.findWithPagination({ page: 1, limit: 1000 });
+      const matchingTags = result.items.filter(tag => 
+        tag.name.toLowerCase().includes(nameHint.toLowerCase())
+      );
+      return matchingTags;
+    } catch (error) {
+      this.logger.error('Error fetching tags by name hint', error);
+      return [];
+    }
   }
 }

@@ -67,10 +67,14 @@ const configFactory: FactoryProvider = {
   inject: [ConfigService],
 }
 
+console.log('DEBUG APP_NAME:', process.env.APP_NAME);
+console.log('DEBUG APP_VERSION:', process.env.APP_VERSION);
+
 @Global()
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: '.env',
       validationSchema: completeValidationSchema,
     }),
   ],

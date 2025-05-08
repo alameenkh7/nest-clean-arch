@@ -1,4 +1,5 @@
 import { FactoryProvider, LoggerService } from '@nestjs/common'
+import { ConfigS, LoggerS } from '../../tokens'
 import {
   format,
   createLogger,
@@ -11,7 +12,6 @@ import { LoggingWinston } from '@google-cloud/logging-winston'
 import { Configuration } from 'src/config/NormalizedConfModule'
 import { contextFormatter } from './contextFormatter'
 import { levelZipFormatter } from './levelZipFormatter'
-import { ConfigS, LoggerS } from '../../tokens'
 
 export type Logger = LoggerService & {
   critical: (message: any, ...optionsParams: any[]) => any

@@ -1,0 +1,127 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type PaginationInfo {
+  totalElements: Int!
+  totalPages: Int!
+  currentPage: Int!
+  pageSize: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type Tag {
+  id: String!
+  name: String!
+  description: String!
+  foreground: String!
+  background: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type TagOutput {
+  id: String!
+}
+
+type PaginatedTags {
+  items: [Tag!]!
+  totalElements: Int!
+  totalPages: Int!
+  currentPage: Int!
+  pageSize: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type YourEntity {
+  id: ID!
+  name: String
+  description: String
+  status: Int
+  createdAt: String
+  updatedAt: String
+}
+
+type YourEntityPaginatedResult {
+  items: [YourEntity!]!
+  total: Int!
+  page: Int!
+  limit: Int!
+}
+
+type PaginatedResult {
+  items: [YourEntity!]!
+  pageInfo: PaginationInfo!
+}
+
+type Query {
+  allTags(pagination: PaginationInput): PaginatedTags!
+  tagById(id: String!): Tag
+  tagByNameHint(nameHint: String!): Tag
+
+  """Get paginated items from a specific Firebase collection"""
+  getPaginatedItems(
+    """Pagination options"""
+    pagination: PaginationInput
+
+    """Name of the Firebase collection to query"""
+    collection: String = "items"
+  ): YourEntityPaginatedResult!
+
+  """Get a specific item by ID from a Firebase collection"""
+  getItemById(
+    """Unique identifier of the item"""
+    id: String!
+
+    """Name of the Firebase collection to query"""
+    collection: String = "items"
+  ): YourEntity
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 0
+  offset: Int = 0
+}
+
+type Mutation {
+  addTag(data: CreateTagInput!): TagOutput!
+  updateTag(data: UpdateTagInput!): TagOutput!
+  deleteTag(id: String!): Boolean!
+
+  """Create a new item in a specific Firebase collection"""
+  createItem(
+    """Data for the new item"""
+    data: CreateEntityInput!
+
+    """Name of the Firebase collection to add item to"""
+    collection: String = "items"
+  ): YourEntity!
+  updateItem(status: Int, description: String, name: String, id: String!): YourEntity
+  deleteItem(id: String!): Boolean!
+}
+
+input CreateTagInput {
+  name: String!
+  description: String!
+  foreground: String!
+  background: String!
+}
+
+input UpdateTagInput {
+  name: String!
+  description: String!
+  foreground: String!
+  background: String!
+  id: String!
+}
+
+input CreateEntityInput {
+  name: String
+  description: String
+  status: Int
+  createdAt: String
+  updatedAt: String
+}

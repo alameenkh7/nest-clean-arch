@@ -2,6 +2,7 @@ import {
   Args,
   Field,
   InputType,
+  Int,
   Mutation,
   ObjectType,
   Query,
@@ -9,9 +10,10 @@ import {
 } from '@nestjs/graphql'
 
 import { Inject } from '@nestjs/common'
-import { CoreS, PersistenceS } from '../../tokens'
-import { InMemoryPersistence } from '../../infrastructure/InMemoryStorage/inmemorystorage.service'
+import { CoreS } from '../../tokens'
+import { FirebaseService } from '../../services/firebase.service'
 import { UseCases } from '../../core/usecases'
+import { PaginationInput } from './pagination.resolver'
 
 @InputType()
 export class CreateTagInput {
@@ -52,11 +54,11 @@ export class Tag {
   background: string
 
 
-  @Field(() => Date)
-  createdAt: Date
+  @Field()
+  createdAt: string
 
-  @Field(() => Date)
-  updatedAt: Date
+  @Field()
+  updatedAt: string
 }
 
 @ObjectType()
@@ -65,11 +67,35 @@ class TagOutput {
   id: string
 }
 
+@ObjectType('PaginatedTags')
+export class PaginatedTags {
+  @Field(() => [Tag])
+  items: Tag[]
+
+  @Field(() => Int)
+  totalElements: number
+
+  @Field(() => Int)
+  totalPages: number
+
+  @Field(() => Int)
+  currentPage: number
+
+  @Field(() => Int)
+  pageSize: number
+
+  @Field(() => Boolean)
+  hasNextPage: boolean
+
+  @Field(() => Boolean)
+  hasPreviousPage: boolean
+}
+
 @Resolver(() => Tag)
 export class TagResolver {
   constructor(
-    @Inject(PersistenceS) private readonly mem: InMemoryPersistence,
-    @Inject(CoreS) private readonly core: UseCases
+    @Inject(CoreS) private readonly core: UseCases,
+    private readonly firebaseService: FirebaseService
   ) {}
 
   @Mutation(() => TagOutput)
@@ -90,18 +116,49 @@ export class TagResolver {
     return true
   }
 
-  @Query(() => [Tag])
-  async allTags() {
-    return this.mem.tagLoader.loadAll()
+  
+
+  @Query(() => PaginatedTags)
+  async allTags(
+    @Args('pagination', { nullable: true }) pagination?: PaginationInput
+  ): Promise<PaginatedTags> {
+    const defaultLimit = 10;
+    const defaultPage = 0;
+
+    const limit = pagination?.limit ?? defaultLimit;
+    const page = pagination?.page ?? defaultPage;
+    const offset = page * limit;
+
+    // Load all tags
+    const allTags = await this.core.tagLoader.loadAll();
+    
+    // Paginate tags
+    const paginatedTags = allTags.slice(offset, offset + limit);
+    const totalCount = allTags.length;
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      items: paginatedTags,
+      totalElements: totalCount,
+      totalPages,
+      currentPage: page,
+      pageSize: limit,
+      hasNextPage: page < totalPages - 1,
+      hasPreviousPage: page > 0
+    };
   }
 
   @Query(() => Tag, { nullable: true })
-  async tagById(@Args('id') id: string) {
-    return this.mem.tagLoader.loadById(id)
+  async tagById(@Args('id') id: string): Promise<Tag | null> {
+    const allTags = await this.core.tagLoader.loadAll();
+    console.log('Available tag IDs:', allTags.map(tag => tag.id));
+    return this.core.tagLoader.loadById(id);
   }
 
   @Query(() => Tag, { nullable: true })
   async tagByNameHint(@Args('nameHint') nameHint: string) {
-    return this.mem.tagLoader.loadByName(nameHint)
+    return this.core.tagLoader.loadByName(nameHint)
   }
 }

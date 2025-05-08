@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 import { coreAdapterService } from './coreadapter.service'
-import { InMemoryStorageModule } from '../infrastructure/InMemoryStorage/inmemorystorage.module'
+import { FirebaseService } from '../services/firebase.service'
+import { LoggerModule } from '../infrastructure/Logger/logger.module'
 
 @Module({
-  imports: [InMemoryStorageModule],
-  providers: [coreAdapterService],
+  imports: [LoggerModule],
+  providers: [coreAdapterService, FirebaseService],
   exports: [coreAdapterService],
 })
 export class CoreAdapterModule {}

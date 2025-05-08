@@ -42,7 +42,7 @@ export const makeUC =
         'Invalid background color. Please provide a valid hexadecimal color value.'
       )
     }
-    const now = new Date()
+    const now = new Date().toISOString()
 
     const tagToPersist: Tag = {
       id: UUID(),

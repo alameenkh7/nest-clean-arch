@@ -4,6 +4,6 @@ export interface Tag {
   description: string
   foreground: string
   background: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
 }

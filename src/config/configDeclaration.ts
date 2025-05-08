@@ -30,8 +30,8 @@ export const directDeclarations = {
     env: 'ENVIRONMENT',
     validator: Joi.string()
       .valid('development', 'production', 'staging')
-      .required(),
-    normalization: (conf: ConfigService) => conf.get<string>('ENVIRONMENT')!,
+      .default('development'),
+    normalization: (conf: ConfigService) => conf.get<string>('ENVIRONMENT') || 'development',
   },
   googleKeyFilePath: {
     env: 'GOOGLE_FILE_KEY',
@@ -53,13 +53,13 @@ export const directDeclarations = {
   },
   appName: {
     env: 'APP_NAME',
-    validator: Joi.string().required(),
-    normalization: (conf: ConfigService) => conf.get<string>('APP_NAME')!,
+    validator: Joi.string().default('RearwayApp'),
+    normalization: (conf: ConfigService) => conf.get<string>('APP_NAME') || 'RearwayApp',
   },
   appVersion: {
     env: 'APP_VERSION',
-    validator: Joi.string().required(),
-    normalization: (conf: ConfigService) => conf.get<string>('APP_VERSION')!,
+    validator: Joi.string().default('1.0.0'),
+    normalization: (conf: ConfigService) => conf.get<string>('APP_VERSION') || '1.0.0',
   },
   inMemoryStorageFilePath: {
     env: 'INMEMORY_STORAGE_FILE_PATH',

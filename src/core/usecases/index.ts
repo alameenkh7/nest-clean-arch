@@ -41,6 +41,7 @@ export function initUseCases(deps: Deps) {
       updateTag,
       deleteTag,
     },
+    tagLoader: deps.tagLoader,
   }
 }
 

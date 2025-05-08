@@ -62,7 +62,7 @@ export const makeUC =
       foreground: foreground ?? tag.foreground,
       background: background ?? tag.background,
       createdAt: tag.createdAt,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     }
 
     await tagPersistor.persist(updatedTag)

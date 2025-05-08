@@ -32,3 +32,8 @@ lerna-debug.log*
 
 # Security
 .env
+.env.local
+firebase-credentials.json
+*.key
+*.pem
+*.p12

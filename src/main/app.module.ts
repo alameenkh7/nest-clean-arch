@@ -1,15 +1,18 @@
-import { Module } from '@nestjs/common'
-import {
-  // Configuration,
-  NormalizedConfModule,
-} from '../config/NormalizedConfModule'
-import { AppGraphQLModule } from 'src/gateways/graphql/graphql.module'
-import { HttpModule } from 'src/gateways/http/http.module'
-import { LoggerModule } from '../infrastructure/Logger/logger.module'
-import { AppService } from './app.service'
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AppGraphQLModule } from '../gateways/graphql/graphql.module';
+import { CoreAdapterModule } from '../coreadapter/coreadapter.module';
 
 @Module({
-  imports: [NormalizedConfModule, LoggerModule, HttpModule, AppGraphQLModule],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env'],
+    }),
+    CoreAdapterModule,
+    AppGraphQLModule,
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

@@ -11,6 +11,8 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import compression from 'compression'
 import { ConfigS } from './tokens'
+import { join } from 'path'
+import { NestExpressApplication } from '@nestjs/platform-express'
 
 dayjs.extend(isSameOrBefore)
 dayjs.extend(isSameOrAfter)
@@ -21,14 +23,17 @@ dayjs.extend(timezone)
 Error.stackTraceLimit = 200 //Please tell with team before change that value
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true })
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true })
   const config: Configuration = app.get(ConfigS)
 
+  // Serve static files from the dist/public directory
+  app.useStaticAssets(join(process.cwd(), 'dist', 'public'))
 
   app.use(cookieParser())
   app.useLogger(makeLogger(config))
   app.use(compression())
 
   await app.listen(config.port)
+  console.log(`Application is running on: http://localhost:${config.port}`)
 }
 bootstrap()
